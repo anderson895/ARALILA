@@ -52,7 +52,6 @@ FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    'aralila-backend.onrender.com',
     '.onrender.com',
     '.vercel.app',
 ] + [host.strip() for host in os.getenv('ALLOWED_HOSTS', '').split(',') if host.strip()]
@@ -275,7 +274,6 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     os.getenv('FRONTEND_URL', 'http://localhost:3000'),
     "https://aralila.vercel.app", 
-    "https://aralila-backend.onrender.com",
     "https://aralila-project.vercel.app",
 ]
 

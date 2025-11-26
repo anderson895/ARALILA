@@ -18,11 +18,13 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     school_name = models.CharField(max_length=255, blank=True, null=True)
     profile_pic = models.CharField(max_length=255, choices=ProfilePicEnum.choices, blank=True)
     
-    ls_points = models.IntegerField(default=0)  # ⭐ ADD THIS
+    ls_points = models.IntegerField(default=0)  
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)
+    last_login_date = models.DateField(null=True, blank=True)
+
 
     
     # Fix the clashing reverse accessors

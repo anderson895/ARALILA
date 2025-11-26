@@ -3,13 +3,10 @@ import jwt
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from .models import CustomUser
+from datetime import date, timedelta
 
 class SupabaseAuthentication(BaseAuthentication):
-    """
-    Authenticate requests using Supabase JWT tokens.
-    Creates/updates Django CustomUser on successful auth.
-    """
-    
+
     def authenticate(self, request):
         auth_header = request.headers.get('Authorization')
         
@@ -18,26 +15,19 @@ class SupabaseAuthentication(BaseAuthentication):
         
         token = auth_header.split(' ')[1]
 
-        print(f"🔍 Attempting to decode token: {token[:50]}...")
-        print(f"🔍 Using JWT secret: {os.getenv('SUPABASE_JWT_SECRET')[:20]}...")
-        
         try:
             payload = jwt.decode(
                 token,
                 os.getenv('SUPABASE_JWT_SECRET'),
                 algorithms=['HS256'],
                 audience='authenticated',
-                leeway=300  # Allow 5 minutes clock difference
+                leeway=300
             )
             
-            # Extract user info
             user_id = payload.get('sub')
             email = payload.get('email')
             user_metadata = payload.get('user_metadata', {})
-            
-            print(f"✅ Authenticated user: {email} (ID: {user_id})")
-            
-            # Get or create Django user
+
             user, created = CustomUser.objects.get_or_create(
                 supabase_user_id=user_id,
                 defaults={
@@ -47,11 +37,8 @@ class SupabaseAuthentication(BaseAuthentication):
                     'school_name': user_metadata.get('school_name', ''),
                 }
             )
-            
-            if created:
-                print(f"✅ Created new Django user for {email}")
-            
-            # Update user info if changed (except profile_pic and school_name)
+
+            # ---- UPDATE NAME INFO IF CHANGED ----
             if not created:
                 updated = False
                 if user.email != email:
@@ -66,19 +53,35 @@ class SupabaseAuthentication(BaseAuthentication):
                 
                 if updated:
                     user.save()
-                    print(f"✅ Updated user info for {email}")
-            
-            print(f"🔑 Returning user instance: {user} (type: {type(user)})")
+
+            # ---- LOGIN STREAK LOGIC HERE ----
+            today = date.today()
+
+            if user.last_login_date is None:
+                # First login ever
+                user.ls_points = 1
+            else:
+                # Check streak
+                if user.last_login_date == today - timedelta(days=1):
+                    # Consecutive day → +1 point
+                    user.ls_points += 1
+                elif user.last_login_date == today:
+                    # Same-day login → do nothing
+                    pass
+                else:
+                    # Missed a day → reset streak
+                    user.ls_points = 1
+
+            # Update login date
+            user.last_login_date = today
+            user.save()
+
+            # ---- RETURN USER ----
             return (user, None)
-            
+
         except jwt.ExpiredSignatureError:
-            print("❌ SupabaseAuthentication: token expired")
             raise AuthenticationFailed('Token has expired')
-        except jwt.InvalidTokenError as e:
-            print(f"❌ SupabaseAuthentication: invalid token: {e}")
+        except jwt.InvalidTokenError:
             raise AuthenticationFailed('Invalid token')
         except Exception as e:
-            print(f"❌ Auth error: {str(e)}")
-            import traceback
-            traceback.print_exc()
             raise AuthenticationFailed(f'Authentication failed: {str(e)}')
