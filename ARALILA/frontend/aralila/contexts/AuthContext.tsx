@@ -14,9 +14,9 @@ interface User {
   full_name: string;
   school_name?: string;
   profile_pic?: string;
-  ls_points: number;   // <-- ADD THIS
+  ls_points: number;
+  collected_badges: string[]; // <-- Add this
 }
-
 
 interface AuthContextType {
   user: User | null;
@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const supabase = createClient();
 
-  const fetchUserProfile = async (token: string) => {
+ const fetchUserProfile = async (token: string) => {
   try {
     const response = await fetch(`${env.backendUrl}/api/users/profile/`, {
       headers: {
@@ -65,7 +65,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       full_name: `${data.first_name} ${data.last_name}`.trim(),
       school_name: data.school_name,
       profile_pic: data.profile_pic,
-      ls_points: data.ls_points,   // <-- ADD THIS
+      ls_points: data.ls_points,
+      collected_badges: data.collected_badges || [], // <-- map collected badges
     };
   } catch (error) {
     console.error("Error fetching user profile:", error);

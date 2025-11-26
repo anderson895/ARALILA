@@ -54,27 +54,47 @@ class SupabaseAuthentication(BaseAuthentication):
                 if updated:
                     user.save()
 
-            # ---- LOGIN STREAK LOGIC HERE ----
+            # ---- LOGIN STREAK LOGIC ----
             today = date.today()
+            new_streak = False
 
             if user.last_login_date is None:
                 # First login ever
                 user.ls_points = 1
+                new_streak = True
             else:
                 # Check streak
                 if user.last_login_date == today - timedelta(days=1):
                     # Consecutive day → +1 point
                     user.ls_points += 1
+                    new_streak = True
                 elif user.last_login_date == today:
                     # Same-day login → do nothing
-                    pass
+                    new_streak = False
                 else:
                     # Missed a day → reset streak
                     user.ls_points = 1
+                    new_streak = True
 
             # Update login date
             user.last_login_date = today
+
+            # ---- COLLECT BADGES BASED ON LOGIN STREAK ----
+            badges_by_streak = {
+                3: "1",
+                5: "2",
+                30: "3",
+                100: "4",
+                200: "5",
+            }
+
+            if new_streak:
+                for streak, badge_id in badges_by_streak.items():
+                    if user.ls_points >= streak and badge_id not in user.collected_badges:
+                        user.collected_badges.append(badge_id)
+
             user.save()
+
 
             # ---- RETURN USER ----
             return (user, None)

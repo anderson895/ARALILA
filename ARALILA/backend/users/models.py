@@ -20,13 +20,14 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     
     ls_points = models.IntegerField(default=0)  
 
+    # New JSON field for badges
+    collected_badges = models.JSONField(default=list, blank=True, help_text="List of collected badge identifiers")
+
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)
     last_login_date = models.DateField(null=True, blank=True)
 
-
-    
     # Fix the clashing reverse accessors
     groups = models.ManyToManyField(
         'auth.Group',

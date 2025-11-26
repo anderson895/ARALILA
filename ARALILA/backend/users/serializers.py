@@ -14,14 +14,16 @@ class CustomUserSerializer(serializers.ModelSerializer):
             'full_name',
             'school_name',
             'profile_pic',
-            'ls_points',       # <-- ADD THIS
+            'ls_points',           
+            'collected_badges',    
             'is_active',
             'date_joined',
         ]
         read_only_fields = [
             'supabase_user_id',
             'email',
-            'ls_points',       # optional: you can include this if points shouldn't be edited manually
+            'ls_points',           
+            'collected_badges',     
             'is_active',
             'date_joined',
         ]
