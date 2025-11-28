@@ -37,10 +37,10 @@ export default function ReviewPage() {
     const base = word.split("_")[0].toLowerCase();
     const max = wordVariations[base] || 1;
     const index = max === 1 ? 1 : Math.floor(Math.random() * max) + 1;
-    const fileName = `${base}_${index}.jpg`;
+    const fileName = `${base}.jpg`;
 
     const { data } = supabase.storage
-      .from("games_fourpicsoneword_images")
+      .from("area_1")
       .getPublicUrl(fileName);
 
     if (!data?.publicUrl) {
@@ -175,7 +175,7 @@ export default function ReviewPage() {
 
       <main className="relative z-10 flex flex-col items-center justify-start min-h-screen p-4 pt-28 pb-10 md:p-8 md:pl-24 md:pt-32 md:pb-12 w-full">
   <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 text-center">
-    Spelling Challenge Review - {areaName}
+    Balik Tingin  {/*- {areaName} */}
   </h1>
 
   {/* Flip Card */}
@@ -252,22 +252,22 @@ export default function ReviewPage() {
     <button
       onClick={handlePrev}
       disabled={currentIndex === 0}
-      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-50 w-full sm:w-auto"
+      className="px-4 cursor-pointer py-2 bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-50 w-full sm:w-auto"
     >
       Previous
     </button>
     <button
       onClick={handleNext}
       disabled={currentIndex === questions.length - 1}
-      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-50 w-full sm:w-auto"
+      className="px-4 cursor-pointer py-2 bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-50 w-full sm:w-auto"
     >
       Next
     </button>
   </div>
 
-  <p className="text-gray-400 text-center text-sm sm:text-base">
+  {/* <p className="text-gray-400 text-center text-sm sm:text-base">
     Question {currentIndex + 1} of {questions.length}
-  </p>
+  </p> */}
 </main>
 
 
