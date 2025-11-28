@@ -199,31 +199,13 @@ CHANNEL_LAYERS = {
 #         }
 #     }
 # not my database
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'postgres',  
-#         'USER': 'postgres.dnrwenixinuxocwdlmwk',  
-#         'PASSWORD': 'F4-aralila-db*SR',
-#         'HOST': 'aws-1-ap-southeast-1.pooler.supabase.com',
-#         'PORT': '6543',
-#         'OPTIONS': {
-#             'sslmode': 'require',
-#             'connect_timeout': 10,
-#         },
-#         'CONN_MAX_AGE': 0,
-#     }
-# }
-
-
-# my database
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'postgres',  
-        'USER': 'postgres.sovnysawenldkipowbia',  
-        'PASSWORD': 'Aralila12325',
-        'HOST': 'aws-1-ap-southeast-2.pooler.supabase.com',
+        'USER': 'postgres.dnrwenixinuxocwdlmwk',  
+        'PASSWORD': 'F4-aralila-db*SR',
+        'HOST': 'aws-1-ap-southeast-1.pooler.supabase.com',
         'PORT': '6543',
         'OPTIONS': {
             'sslmode': 'require',
@@ -232,6 +214,24 @@ DATABASES = {
         'CONN_MAX_AGE': 0,
     }
 }
+
+
+# my database
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'postgres',  
+#         'USER': 'postgres.sovnysawenldkipowbia',  
+#         'PASSWORD': 'Aralila12325',
+#         'HOST': 'aws-1-ap-southeast-2.pooler.supabase.com',
+#         'PORT': '6543',
+#         'OPTIONS': {
+#             'sslmode': 'require',
+#             'connect_timeout': 10,
+#         },
+#         'CONN_MAX_AGE': 0,
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
