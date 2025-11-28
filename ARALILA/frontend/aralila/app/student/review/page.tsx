@@ -10,149 +10,266 @@ import AnimatedBackground from "@/components/bg/animatedforest-bg";
 import { createClient } from "@/lib/supabase/client";
 
 export default function ReviewPage() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [resolvedAreaId, setResolvedAreaId] = useState<number | null>(null);
+  const [areaName, setAreaName] = useState<string>("");
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const areaParam = searchParams.get("area") || "0";
 
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [flipped, setFlipped] = useState(false);
-
-  // NEW STATES (optimized)
-  const [currentQuestion, setCurrentQuestion] = useState<any | null>(null);
-  const [questionNumber, setQuestionNumber] = useState(1); // load Q1 first
-  const [loading, setLoading] = useState(true);
-
   const supabase = createClient();
 
-  // Word → number of image variations
   const wordVariations: Record<string, number> = {
     bola: 1,
     laro: 4,
     sample: 3,
   };
 
-  // Convert word → Supabase image URL
-  const getQuestionImage = (word: string) => {
-    const base = word.split("_")[0].toLowerCase();
-    const max = wordVariations[base] || 1;
-    const index = max === 1 ? 1 : Math.floor(Math.random() * max) + 1;
-    const fileName = `${base}_${index}.jpg`;
 
-    const { data } = supabase.storage
-      .from("games_fourpicsoneword_images")
-      .getPublicUrl(fileName);
+const getQuestionImage = (word: string) => {
+  const base = word.split("_")[0].toLowerCase();
+  const max = wordVariations[base] || 1;
+  const index = max === 1 ? 1 : Math.floor(Math.random() * max) + 1;
+  const fileName = `${base}_${index}.jpg`;
 
-    if (!data?.publicUrl) {
-      console.warn("Image missing:", fileName);
-      return "";
-    }
+  const { data } = supabase.storage
+    .from("games_fourpicsoneword_images")
+    .getPublicUrl(fileName);
 
-    return data.publicUrl;
-  };
+  if (!data?.publicUrl) {
+    console.warn("Supabase image fetch returned empty URL for", fileName);
+    return "";
+  }
 
-  // Fetch single question from backend
-  const fetchSingleQuestion = async (num: number) => {
-    try {
-      setLoading(true);
-      setFlipped(false);
+  // Log the fetched URL for debugging
+  console.log(`Supabase image URL for "${fileName}":`, data.publicUrl);
+
+  return data.publicUrl;
+};
+
+
+
+  const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchQuestions = async () => {
+      setLoadingQuestions(true);
       setError(null);
 
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        router.push("/login");
-        return;
-      }
-
-      const areaId = parseInt(areaParam, 10);
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/games/questions/single/${areaId}/${num}/`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          router.push("/login");
+          return;
         }
-      );
 
-      if (!res.ok) throw new Error("Failed to fetch question.");
+        let areaId = parseInt(areaParam, 10);
+        try {
+          const areaResp = await fetch(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/games/area/order/${areaId}/`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          if (!areaResp.ok) throw new Error("Failed to fetch area");
+          const areaData = await areaResp.json();
+          areaId = areaData.area.id;
+          setResolvedAreaId(areaId);
+          setAreaName(areaData.area.name || `Area ${areaId}`);
+        } catch {
+          console.warn("Failed to resolve area ID, using raw param");
+          setResolvedAreaId(areaId);
+          setAreaName(`Area ${areaId}`);
+        }
 
-      const data = await res.json();
-      const imgUrl = getQuestionImage(data.word);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/games/spelling/${areaId}/`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
-      setCurrentQuestion({ ...data, imgUrl });
-      setLoading(false);
-    } catch (err: any) {
-      setError(err.message);
-      setLoading(false);
-    }
+        if (!response.ok) {
+          let msg = `HTTP ${response.status}: ${response.statusText}`;
+          try {
+            const errData = await response.json();
+            msg = errData.error || msg;
+          } catch {}
+          throw new Error(msg);
+        }
+
+        const data = await response.json();
+        setQuestions(data.questions || []);
+
+        // Preload Supabase image URLs
+        const urls: Record<string, string> = {};
+        for (const q of data.questions || []) {
+          urls[q.word] = getQuestionImage(q.word); // now returns string directly
+        }
+        setImageUrls(urls);
+
+      } catch (err: any) {
+        setError(err.message || "Failed to fetch questions");
+      } finally {
+        setLoadingQuestions(false);
+      }
+    };
+
+    fetchQuestions();
+  }, [user, areaParam, router]);
+
+  if (isLoading) {
+    return (
+      <div className="relative min-h-screen w-full flex items-center justify-center bg-black text-white">
+        <div className="animate-spin h-12 w-12 border-b-2 border-purple-500 rounded-full"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    router.push("/login");
+    return null;
+  }
+
+  if (loadingQuestions) {
+    return (
+      <div className="relative min-h-screen w-full flex items-center justify-center bg-black text-white">
+        Loading questions...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="relative min-h-screen w-full flex items-center justify-center bg-black text-red-500">
+        {error}
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="relative min-h-screen w-full flex items-center justify-center bg-black text-gray-300">
+        No spelling questions found for this area.
+      </div>
+    );
+  }
+
+  const currentQuestion = questions[currentIndex];
+
+  const handleNext = () => {
+    setFlipped(false);
+    setCurrentIndex((prev) => Math.min(prev + 1, questions.length - 1));
   };
 
-  // Load first question
-  useEffect(() => {
-    if (user) {
-      fetchSingleQuestion(1);
-    }
-  }, [user]);
-
-  // Next question handler
-  const nextQuestion = () => {
-    const next = questionNumber + 1;
-    setQuestionNumber(next);
-    fetchSingleQuestion(next);
+  const handlePrev = () => {
+    setFlipped(false);
+    setCurrentIndex((prev) => Math.max(prev - 1, 0));
   };
-
-  // Flip card
-  const flipCard = () => setFlipped((prev) => !prev);
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen w-full overflow-hidden bg-black text-white">
+      <Header menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
+      <FullscreenMenu menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
       <AnimatedBackground />
-
-      <FullscreenMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
       <Sidebar />
-      <Header onMenuClick={() => setMenuOpen(true)} />
 
-      <div className="relative z-10 flex flex-col items-center px-6 py-10 text-white">
-        <h1 className="text-3xl font-bold mb-6">Review Mode</h1>
+      <main className="relative z-10 flex flex-col items-center justify-start min-h-screen p-4 pt-28 pb-10 md:p-8 md:pl-24 md:pt-32 md:pb-12 w-full">
+        <h1 className="text-3xl font-bold mb-6 text-center">
+          Spelling Challenge Review - {areaName}
+        </h1>
 
-        {loading && <p className="text-lg">Loading question...</p>}
-
-        {error && <p className="text-red-400">{error}</p>}
-
-        {!loading && currentQuestion && (
-          <div className="w-full max-w-xl text-center">
-            {/* Image */}
-            <img
-              src={currentQuestion.imgUrl}
-              alt="question"
-              className="w-full rounded-lg shadow-lg mb-6"
-            />
-
-            {/* Flashcard */}
+        {/* Flip Card */}
+        <div className="flex flex-col items-center w-full max-w-md">
+          <div className="w-full h-64 perspective mb-4">
             <div
-              className={`relative w-full h-40 cursor-pointer transition-transform duration-500 ${
-                flipped ? "rotate-y-180" : ""
+              className={`relative w-full h-full transition-transform duration-500 transform-style-preserve-3d ${
+                flipped ? "rotate-x-180" : ""
               }`}
-              onClick={flipCard}
             >
-              <div className="absolute w-full h-full backface-hidden flex items-center justify-center bg-blue-700 rounded-lg text-xl font-bold">
-                {currentQuestion.word}
+              {/* Front */}
+              <div className="absolute w-full h-full backface-hidden bg-gray-700 border border-purple-600 rounded-xl flex flex-col items-center justify-center p-6">
+                <p className="text-2xl font-bold text-purple-300">
+                  {currentQuestion.word}
+                </p>
+                <p className="text-gray-200 mt-2 text-center">
+                  {currentQuestion.sentence}
+                </p>
+                <p className="text-sm text-yellow-300 mt-2">
+                  Difficulty: {currentQuestion.difficulty}
+                </p>
               </div>
-              <div className="absolute w-full h-full rotate-y-180 backface-hidden flex items-center justify-center bg-green-700 rounded-lg text-xl font-bold">
-                {currentQuestion.meaning || "Meaning"}
+
+              {/* Back */}
+              <div className="absolute w-full h-full backface-hidden bg-gray-700 border border-purple-600 rounded-xl flex items-center justify-center p-4 rotate-x-180">
+                <img
+                  src={imageUrls[currentQuestion.word] || ""}
+                  alt={currentQuestion.word}
+                  className="max-h-full max-w-full object-contain"
+                />
               </div>
             </div>
+          </div>
 
-            {/* Next Button */}
+          <button
+            onClick={() => {
+              setFlipped(!flipped);
+
+              const url = imageUrls[currentQuestion.word];
+              if (url) {
+                console.log(`Flipping card - Image found for "${currentQuestion.word}":`, url);
+              } else {
+                console.warn(`Flipping card - Image NOT found for "${currentQuestion.word}"`);
+              }
+            }}
+            className="cursor-pointer mb-4 px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded text-white font-semibold"
+          >
+            Flip Card
+          </button>
+
+
+          <div className="flex gap-4 mb-2">
             <button
-              onClick={nextQuestion}
-              className="mt-8 px-6 py-3 bg-yellow-400 text-black rounded-lg font-semibold hover:bg-yellow-300"
+              onClick={handlePrev}
+              disabled={currentIndex === 0}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-50"
             >
-              NEXT →
+              Previous
+            </button>
+            <button
+              onClick={handleNext}
+              disabled={currentIndex === questions.length - 1}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-50"
+            >
+              Next
             </button>
           </div>
-        )}
-      </div>
+
+          <p className="text-gray-400 text-center">
+            Question {currentIndex + 1} of {questions.length}
+          </p>
+        </div>
+      </main>
+
+      <style jsx>{`
+        .perspective {
+          perspective: 1000px;
+        }
+        .backface-hidden {
+          backface-visibility: hidden;
+        }
+        .rotate-x-180 {
+          transform: rotateX(180deg);
+        }
+        .transform-style-preserve-3d {
+          transform-style: preserve-3d;
+        }
+      `}</style>
     </div>
   );
 }
