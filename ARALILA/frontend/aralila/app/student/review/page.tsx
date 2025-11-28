@@ -174,101 +174,102 @@ export default function ReviewPage() {
       <Sidebar />
 
       <main className="relative z-10 flex flex-col items-center justify-start min-h-screen p-4 pt-28 pb-10 md:p-8 md:pl-24 md:pt-32 md:pb-12 w-full">
-        <h1 className="text-3xl font-bold mb-6 text-center">
-          Spelling Challenge Review - {areaName}
-        </h1>
+  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 text-center">
+    Spelling Challenge Review - {areaName}
+  </h1>
 
-        {/* Flip Card */}
-        <div
-          className="w-full max-w-3xl h-[70vh] perspective mb-4 cursor-pointer"
-          onClick={() => setFlipped(!flipped)}
-        >
-          <div
-            className={`relative w-full h-full transition-transform duration-500 transform-style-preserve-3d ${
-              flipped ? "rotate-x-180" : ""
-            }`}
-          >
-            {/* Front */}
-            <div className="absolute w-full h-full backface-hidden bg-gray-700 border border-purple-600 rounded-xl flex flex-col items-center justify-center p-6">
-              <p className="text-3xl font-bold text-purple-300">
-                {currentQuestion.word}
-              </p>
-              <p className="text-gray-200 mt-2 text-center">
-                {currentQuestion.sentence}
-              </p>
-              <p className="text-sm text-yellow-300 mt-2">
-                Difficulty: {currentQuestion.difficulty}
-              </p>
-            </div>
-
-            {/* Back */}
-            <div className="absolute w-full h-full backface-hidden bg-gray-700 border border-purple-600 rounded-xl flex items-center justify-center p-4 rotate-x-180">
-              <img
-                src={imageUrls[currentQuestion.word] || ""}
-                alt={currentQuestion.word}
-                className="max-h-full max-w-full object-contain"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Fullscreen toggle */}
-        {fullscreen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50 cursor-pointer"
-            onClick={() => setFullscreen(false)}
-          >
-            <div
-              className={`relative w-full max-w-5xl h-[90vh] transition-transform duration-500 transform-style-preserve-3d ${
-                flipped ? "rotate-x-180" : ""
-              }`}
-            >
-              {/* Front */}
-              <div className="absolute w-full h-full backface-hidden bg-gray-700 border border-purple-600 rounded-xl flex flex-col items-center justify-center p-6">
-                <p className="text-5xl font-bold text-purple-300">
-                  {currentQuestion.word}
-                </p>
-                <p className="text-gray-200 mt-2 text-center">
-                  {currentQuestion.sentence}
-                </p>
-                <p className="text-lg text-yellow-300 mt-2">
-                  Difficulty: {currentQuestion.difficulty}
-                </p>
-              </div>
-
-              {/* Back */}
-              <div className="absolute w-full h-full backface-hidden bg-gray-700 border border-purple-600 rounded-xl flex items-center justify-center p-4 rotate-x-180">
-                <img
-                  src={imageUrls[currentQuestion.word] || ""}
-                  alt={currentQuestion.word}
-                  className="max-h-full max-w-full object-contain"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="flex gap-4 mb-2">
-          <button
-            onClick={handlePrev}
-            disabled={currentIndex === 0}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <button
-            onClick={handleNext}
-            disabled={currentIndex === questions.length - 1}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-
-        <p className="text-gray-400 text-center">
-          Question {currentIndex + 1} of {questions.length}
+  {/* Flip Card */}
+  <div
+    className="w-full max-w-md sm:max-w-2xl md:max-w-3xl aspect-[4/3] perspective mb-4 cursor-pointer"
+    onClick={() => setFlipped(!flipped)}
+  >
+    <div
+      className={`relative w-full h-full transition-transform duration-500 transform-style-preserve-3d ${
+        flipped ? "rotate-x-180" : ""
+      }`}
+    >
+      {/* Front */}
+      <div className="absolute w-full h-full backface-hidden bg-gray-700 border border-purple-600 rounded-xl flex flex-col items-center justify-center p-4 sm:p-6">
+        <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-300 text-center">
+          {currentQuestion.word}
         </p>
-      </main>
+        <p className="text-sm sm:text-base md:text-lg text-gray-200 mt-2 text-center">
+          {currentQuestion.sentence}
+        </p>
+        <p className="text-xs sm:text-sm md:text-base text-yellow-300 mt-2">
+          Difficulty: {currentQuestion.difficulty}
+        </p>
+      </div>
+
+      {/* Back */}
+      <div className="absolute w-full h-full backface-hidden bg-gray-700 border border-purple-600 rounded-xl flex items-center justify-center p-2 sm:p-4 rotate-x-180">
+        <img
+          src={imageUrls[currentQuestion.word] || ""}
+          alt={imageUrls[currentQuestion.word] }
+          className="w-full h-full object-cover rounded-xl"
+        />
+      </div>
+    </div>
+  </div>
+
+  {/* Fullscreen toggle */}
+  {fullscreen && (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50 cursor-pointer p-2 sm:p-4"
+      onClick={() => setFullscreen(false)}
+    >
+      <div
+        className={`relative w-full max-w-xl sm:max-w-4xl md:max-w-5xl h-[80vh] sm:h-[85vh] md:h-[90vh] transition-transform duration-500 transform-style-preserve-3d ${
+          flipped ? "rotate-x-180" : ""
+        }`}
+      >
+        {/* Front */}
+        <div className="absolute w-full h-full backface-hidden bg-gray-700 border border-purple-600 rounded-xl flex flex-col items-center justify-center p-4 sm:p-6">
+          <p className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-300 text-center">
+            {currentQuestion.word}
+          </p>
+          <p className="text-sm sm:text-lg md:text-xl text-gray-200 mt-2 text-center">
+            {currentQuestion.sentence}
+          </p>
+          <p className="text-xs sm:text-sm md:text-lg text-yellow-300 mt-2">
+            Difficulty: {currentQuestion.difficulty}
+          </p>
+        </div>
+
+        {/* Back */}
+        <div className="absolute w-full h-full backface-hidden bg-gray-700 border border-purple-600 rounded-xl flex items-center justify-center p-2 sm:p-4 rotate-x-180">
+          <img
+            src={imageUrls[currentQuestion.word] || ""}
+            alt={currentQuestion.word}
+            className="max-h-full max-w-full object-contain"
+          />
+        </div>
+      </div>
+    </div>
+  )}
+
+  <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-2">
+    <button
+      onClick={handlePrev}
+      disabled={currentIndex === 0}
+      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-50 w-full sm:w-auto"
+    >
+      Previous
+    </button>
+    <button
+      onClick={handleNext}
+      disabled={currentIndex === questions.length - 1}
+      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-50 w-full sm:w-auto"
+    >
+      Next
+    </button>
+  </div>
+
+  <p className="text-gray-400 text-center text-sm sm:text-base">
+    Question {currentIndex + 1} of {questions.length}
+  </p>
+</main>
+
 
       <style jsx>{`
         .perspective {
