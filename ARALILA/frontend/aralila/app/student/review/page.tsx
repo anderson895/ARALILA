@@ -19,6 +19,7 @@ export default function ReviewPage() {
   const [areaName, setAreaName] = useState<string>("");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -32,29 +33,23 @@ export default function ReviewPage() {
     sample: 3,
   };
 
+  const getQuestionImage = (word: string) => {
+    const base = word.split("_")[0].toLowerCase();
+    const max = wordVariations[base] || 1;
+    const index = max === 1 ? 1 : Math.floor(Math.random() * max) + 1;
+    const fileName = `${base}_${index}.jpg`;
 
-const getQuestionImage = (word: string) => {
-  const base = word.split("_")[0].toLowerCase();
-  const max = wordVariations[base] || 1;
-  const index = max === 1 ? 1 : Math.floor(Math.random() * max) + 1;
-  const fileName = `${base}_${index}.jpg`;
+    const { data } = supabase.storage
+      .from("games_fourpicsoneword_images")
+      .getPublicUrl(fileName);
 
-  const { data } = supabase.storage
-    .from("games_fourpicsoneword_images")
-    .getPublicUrl(fileName);
+    if (!data?.publicUrl) {
+      console.warn("Supabase image fetch returned empty URL for", fileName);
+      return "";
+    }
 
-  if (!data?.publicUrl) {
-    console.warn("Supabase image fetch returned empty URL for", fileName);
-    return "";
-  }
-
-  // Log the fetched URL for debugging
-  console.log(`Supabase image URL for "${fileName}":`, data.publicUrl);
-
-  return data.publicUrl;
-};
-
-
+    return data.publicUrl;
+  };
 
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
 
@@ -109,10 +104,9 @@ const getQuestionImage = (word: string) => {
         // Preload Supabase image URLs
         const urls: Record<string, string> = {};
         for (const q of data.questions || []) {
-          urls[q.word] = getQuestionImage(q.word); // now returns string directly
+          urls[q.word] = getQuestionImage(q.word);
         }
         setImageUrls(urls);
-
       } catch (err: any) {
         setError(err.message || "Failed to fetch questions");
       } finally {
@@ -185,22 +179,59 @@ const getQuestionImage = (word: string) => {
         </h1>
 
         {/* Flip Card */}
-        <div className="flex flex-col items-center w-full max-w-md">
-          <div className="w-full h-64 perspective mb-4">
+        <div
+          className="w-full max-w-3xl h-[70vh] perspective mb-4 cursor-pointer"
+          onClick={() => setFlipped(!flipped)}
+        >
+          <div
+            className={`relative w-full h-full transition-transform duration-500 transform-style-preserve-3d ${
+              flipped ? "rotate-x-180" : ""
+            }`}
+          >
+            {/* Front */}
+            <div className="absolute w-full h-full backface-hidden bg-gray-700 border border-purple-600 rounded-xl flex flex-col items-center justify-center p-6">
+              <p className="text-3xl font-bold text-purple-300">
+                {currentQuestion.word}
+              </p>
+              <p className="text-gray-200 mt-2 text-center">
+                {currentQuestion.sentence}
+              </p>
+              <p className="text-sm text-yellow-300 mt-2">
+                Difficulty: {currentQuestion.difficulty}
+              </p>
+            </div>
+
+            {/* Back */}
+            <div className="absolute w-full h-full backface-hidden bg-gray-700 border border-purple-600 rounded-xl flex items-center justify-center p-4 rotate-x-180">
+              <img
+                src={imageUrls[currentQuestion.word] || ""}
+                alt={currentQuestion.word}
+                className="max-h-full max-w-full object-contain"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Fullscreen toggle */}
+        {fullscreen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50 cursor-pointer"
+            onClick={() => setFullscreen(false)}
+          >
             <div
-              className={`relative w-full h-full transition-transform duration-500 transform-style-preserve-3d ${
+              className={`relative w-full max-w-5xl h-[90vh] transition-transform duration-500 transform-style-preserve-3d ${
                 flipped ? "rotate-x-180" : ""
               }`}
             >
               {/* Front */}
               <div className="absolute w-full h-full backface-hidden bg-gray-700 border border-purple-600 rounded-xl flex flex-col items-center justify-center p-6">
-                <p className="text-2xl font-bold text-purple-300">
+                <p className="text-5xl font-bold text-purple-300">
                   {currentQuestion.word}
                 </p>
                 <p className="text-gray-200 mt-2 text-center">
                   {currentQuestion.sentence}
                 </p>
-                <p className="text-sm text-yellow-300 mt-2">
+                <p className="text-lg text-yellow-300 mt-2">
                   Difficulty: {currentQuestion.difficulty}
                 </p>
               </div>
@@ -215,45 +246,28 @@ const getQuestionImage = (word: string) => {
               </div>
             </div>
           </div>
+        )}
 
+        <div className="flex gap-4 mb-2">
           <button
-            onClick={() => {
-              setFlipped(!flipped);
-
-              const url = imageUrls[currentQuestion.word];
-              if (url) {
-                console.log(`Flipping card - Image found for "${currentQuestion.word}":`, url);
-              } else {
-                console.warn(`Flipping card - Image NOT found for "${currentQuestion.word}"`);
-              }
-            }}
-            className="cursor-pointer mb-4 px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded text-white font-semibold"
+            onClick={handlePrev}
+            disabled={currentIndex === 0}
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-50"
           >
-            Flip Card
+            Previous
           </button>
-
-
-          <div className="flex gap-4 mb-2">
-            <button
-              onClick={handlePrev}
-              disabled={currentIndex === 0}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <button
-              onClick={handleNext}
-              disabled={currentIndex === questions.length - 1}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-
-          <p className="text-gray-400 text-center">
-            Question {currentIndex + 1} of {questions.length}
-          </p>
+          <button
+            onClick={handleNext}
+            disabled={currentIndex === questions.length - 1}
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded disabled:opacity-50"
+          >
+            Next
+          </button>
         </div>
+
+        <p className="text-gray-400 text-center">
+          Question {currentIndex + 1} of {questions.length}
+        </p>
       </main>
 
       <style jsx>{`
