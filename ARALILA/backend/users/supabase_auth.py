@@ -89,10 +89,20 @@ class SupabaseAuthentication(BaseAuthentication):
             }
 
             if new_streak:
-                for streak, badge_id in badges_by_streak.items():
-                    if user.ls_points >= streak and badge_id not in user.collected_badges:
-                        user.collected_badges.append(badge_id)
+                # Ensure collected_badges is a list of dicts
+                if not user.collected_badges:
+                    user.collected_badges = []
 
+                # Convert old list of badge IDs to dict format if needed
+                for i, b in enumerate(user.collected_badges):
+                    if isinstance(b, str):
+                        user.collected_badges[i] = {"id": b, "status": "unclaimed"}
+
+                existing_badge_ids = [b["id"] for b in user.collected_badges]
+
+                for streak, badge_id in badges_by_streak.items():
+                    if user.ls_points >= streak and badge_id not in existing_badge_ids:
+                        user.collected_badges.append({"id": badge_id, "status": "unclaimed"})
             user.save()
 
 
